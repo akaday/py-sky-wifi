@@ -5,7 +5,7 @@ import psutil
 from pydantic import BaseModel
 
 from .main import app, database
-from .auth import User, fake_users_db, fake_hash_password, authenticate_user
+from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account
 from app.wifi import scan_wifi, connect_to_wifi
 
 router = APIRouter()
@@ -30,10 +30,16 @@ connected_devices = []
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
+        track_failed_login_attempts(form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is locked. Please contact support.",
         )
     return {"access_token": user.username, "token_type": "bearer"}
 
@@ -42,7 +48,17 @@ def read_root():
     return {"message": "Welcome to PySkyWiFi!"}
 
 @router.post("/users/")
-async def create_user(username: str, password: str):
+async def create_user(username: str, password: str, otp: str):
+    if not enforce_password_policy(password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password does not meet complexity requirements",
+        )
+    if not verify_otp(username, otp):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OTP",
+        )
     query = users.insert().values(username=username, password=fake_hash_password(password))
     await database.execute(query)
     return {"username": username}
