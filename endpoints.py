@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import logging
 import psutil
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .main import app, database
 from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account
@@ -86,9 +86,12 @@ def connect_to_wifi_network(ssid: str, password: str):
 @router.post("/network/preferences")
 def configure_network_preferences(preferences: NetworkPreferences):
     try:
-        # Here you would add the logic to configure network preferences
+        preferences = NetworkPreferences(**preferences.dict())
         logger.info(f"Network preferences updated: {preferences}")
         return {"message": "Network preferences updated"}
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        raise HTTPException(status_code=400, detail="Invalid network preferences")
     except Exception as e:
         logger.error(f"Error updating network preferences: {e}")
         raise HTTPException(status_code=500, detail="Error updating network preferences")
@@ -96,7 +99,6 @@ def configure_network_preferences(preferences: NetworkPreferences):
 @router.get("/network/status")
 def get_network_status():
     try:
-        # Here you would add the logic to get real-time network status and statistics
         network_status = {
             "cpu_usage": psutil.cpu_percent(),
             "memory_usage": psutil.virtual_memory().percent,
@@ -118,9 +120,12 @@ def list_connected_devices():
 @router.post("/devices/restrict")
 def restrict_device_access(device: Device):
     try:
-        # Here you would add the logic to restrict device access
+        device = Device(**device.dict())
         logger.info(f"Device access restricted: {device}")
         return {"message": "Device access restricted"}
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        raise HTTPException(status_code=400, detail="Invalid device data")
     except Exception as e:
         logger.error(f"Error restricting device access: {e}")
         raise HTTPException(status_code=500, detail="Error restricting device access")
@@ -128,10 +133,9 @@ def restrict_device_access(device: Device):
 @router.get("/wifi/signal_strength")
 def get_wifi_signal_strength():
     try:
-        # Here you would add the logic to get real-time Wi-Fi signal strength
         signal_strength = {
             "ssid": "example_ssid",
-            "strength": -50  # Example signal strength in dBm
+            "strength": -50
         }
         return {"signal_strength": signal_strength}
     except Exception as e:
@@ -141,8 +145,7 @@ def get_wifi_signal_strength():
 @router.post("/wifi/signal_strength/notify")
 def notify_signal_strength_drop(threshold: int):
     try:
-        # Here you would add the logic to notify users when signal strength drops below the threshold
-        current_signal_strength = -60  # Example current signal strength in dBm
+        current_signal_strength = -60
         if current_signal_strength < threshold:
             return {"message": "Signal strength has dropped below the threshold"}
         return {"message": "Signal strength is above the threshold"}
@@ -153,7 +156,6 @@ def notify_signal_strength_drop(threshold: int):
 @router.post("/wifi/auto_reconnect")
 def auto_reconnect():
     try:
-        # Here you would add the logic to implement auto-reconnect feature
         return {"message": "Auto-reconnect feature implemented"}
     except Exception as e:
         logger.error(f"Error implementing auto-reconnect feature: {e}")
@@ -162,12 +164,11 @@ def auto_reconnect():
 @router.get("/wifi/speed_test")
 def speed_test():
     try:
-        # Here you would add the logic to integrate speed test feature
         speed_metrics = {
-            "download_speed": 50,  # Example download speed in Mbps
-            "upload_speed": 10,    # Example upload speed in Mbps
-            "latency": 20,         # Example latency in ms
-            "packet_loss": 0       # Example packet loss in percentage
+            "download_speed": 50,
+            "upload_speed": 10,
+            "latency": 20,
+            "packet_loss": 0
         }
         return {"speed_metrics": speed_metrics}
     except Exception as e:
@@ -177,10 +178,9 @@ def speed_test():
 @router.get("/network/usage_statistics")
 def get_network_usage_statistics():
     try:
-        # Here you would add the logic to track and display network usage statistics
         usage_statistics = {
-            "data_usage": 1000,  # Example data usage in MB
-            "connected_time": 3600  # Example connected time in seconds
+            "data_usage": 1000,
+            "connected_time": 3600
         }
         return {"usage_statistics": usage_statistics}
     except Exception as e:
@@ -189,8 +189,9 @@ def get_network_usage_statistics():
 
 @router.post("/guest_networks")
 def create_guest_network(ssid: str, password: str):
+    if not ssid or not password:
+        raise HTTPException(status_code=400, detail="SSID and password must not be empty")
     try:
-        # Here you would add the logic to create and manage guest networks
         return {"message": f"Guest network '{ssid}' created with limited privileges"}
     except Exception as e:
         logger.error(f"Error creating guest network: {e}")
@@ -199,10 +200,9 @@ def create_guest_network(ssid: str, password: str):
 @router.get("/guest_networks/usage")
 def get_guest_network_usage():
     try:
-        # Here you would add the logic to control and monitor guest network usage
         guest_network_usage = {
-            "data_usage": 500,  # Example data usage in MB
-            "connected_time": 1800  # Example connected time in seconds
+            "data_usage": 500,
+            "connected_time": 1800
         }
         return {"guest_network_usage": guest_network_usage}
     except Exception as e:
