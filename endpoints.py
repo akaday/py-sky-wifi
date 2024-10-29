@@ -108,3 +108,87 @@ def restrict_device_access(device: Device):
     except Exception as e:
         logger.error(f"Error restricting device access: {e}")
         raise HTTPException(status_code=500, detail="Error restricting device access")
+
+@router.get("/wifi/signal_strength")
+def get_wifi_signal_strength():
+    try:
+        # Here you would add the logic to get real-time Wi-Fi signal strength
+        signal_strength = {
+            "ssid": "example_ssid",
+            "strength": -50  # Example signal strength in dBm
+        }
+        return {"signal_strength": signal_strength}
+    except Exception as e:
+        logger.error(f"Error getting Wi-Fi signal strength: {e}")
+        raise HTTPException(status_code=500, detail="Error getting Wi-Fi signal strength")
+
+@router.post("/wifi/signal_strength/notify")
+def notify_signal_strength_drop(threshold: int):
+    try:
+        # Here you would add the logic to notify users when signal strength drops below the threshold
+        current_signal_strength = -60  # Example current signal strength in dBm
+        if current_signal_strength < threshold:
+            return {"message": "Signal strength has dropped below the threshold"}
+        return {"message": "Signal strength is above the threshold"}
+    except Exception as e:
+        logger.error(f"Error notifying signal strength drop: {e}")
+        raise HTTPException(status_code=500, detail="Error notifying signal strength drop")
+
+@router.post("/wifi/auto_reconnect")
+def auto_reconnect():
+    try:
+        # Here you would add the logic to implement auto-reconnect feature
+        return {"message": "Auto-reconnect feature implemented"}
+    except Exception as e:
+        logger.error(f"Error implementing auto-reconnect feature: {e}")
+        raise HTTPException(status_code=500, detail="Error implementing auto-reconnect feature")
+
+@router.get("/wifi/speed_test")
+def speed_test():
+    try:
+        # Here you would add the logic to integrate speed test feature
+        speed_metrics = {
+            "download_speed": 50,  # Example download speed in Mbps
+            "upload_speed": 10,    # Example upload speed in Mbps
+            "latency": 20,         # Example latency in ms
+            "packet_loss": 0       # Example packet loss in percentage
+        }
+        return {"speed_metrics": speed_metrics}
+    except Exception as e:
+        logger.error(f"Error performing speed test: {e}")
+        raise HTTPException(status_code=500, detail="Error performing speed test")
+
+@router.get("/network/usage_statistics")
+def get_network_usage_statistics():
+    try:
+        # Here you would add the logic to track and display network usage statistics
+        usage_statistics = {
+            "data_usage": 1000,  # Example data usage in MB
+            "connected_time": 3600  # Example connected time in seconds
+        }
+        return {"usage_statistics": usage_statistics}
+    except Exception as e:
+        logger.error(f"Error getting network usage statistics: {e}")
+        raise HTTPException(status_code=500, detail="Error getting network usage statistics")
+
+@router.post("/guest_networks")
+def create_guest_network(ssid: str, password: str):
+    try:
+        # Here you would add the logic to create and manage guest networks
+        return {"message": f"Guest network '{ssid}' created with limited privileges"}
+    except Exception as e:
+        logger.error(f"Error creating guest network: {e}")
+        raise HTTPException(status_code=500, detail="Error creating guest network")
+
+@router.get("/guest_networks/usage")
+def get_guest_network_usage():
+    try:
+        # Here you would add the logic to control and monitor guest network usage
+        guest_network_usage = {
+            "data_usage": 500,  # Example data usage in MB
+            "connected_time": 1800  # Example connected time in seconds
+        }
+        return {"guest_network_usage": guest_network_usage}
+    except Exception as e:
+        logger.error(f"Error getting guest network usage: {e}")
+        raise HTTPException(status_code=500, detail="Error getting guest network usage")
