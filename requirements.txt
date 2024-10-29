@@ -2,3 +2,6 @@ fastapi
 sqlalchemy
 databases
 uvicorn
+psutil
+pydantic
+pyotp

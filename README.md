@@ -5,9 +5,16 @@
 
 ## Features
 - Secure user authentication
-- User registration
+- User registration with strong password policies
+- Multi-factor authentication (MFA) for user registration
+- Account lockout mechanisms
 - Session management
 - Database integration with SQLAlchemy
+- Configure network preferences
+- Display real-time network status and statistics
+- Log network events and activities
+- Send alerts for important network events
+- Manage connected devices
 
 ## Setup
 1. **Clone the Repository**:

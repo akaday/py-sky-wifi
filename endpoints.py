@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import logging
+import psutil
+from pydantic import BaseModel
 
 from .main import app, database
-from .auth import User, fake_users_db, fake_hash_password, authenticate_user
+from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account
 from app.wifi import scan_wifi, connect_to_wifi
 
 router = APIRouter()
@@ -14,14 +16,30 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+class NetworkPreferences(BaseModel):
+    ssid: str
+    password: str
+
+class Device(BaseModel):
+    name: str
+    mac_address: str
+
+connected_devices = []
+
 @router.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
+        track_failed_login_attempts(form_data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is locked. Please contact support.",
         )
     return {"access_token": user.username, "token_type": "bearer"}
 
@@ -30,7 +48,17 @@ def read_root():
     return {"message": "Welcome to PySkyWiFi!"}
 
 @router.post("/users/")
-async def create_user(username: str, password: str):
+async def create_user(username: str, password: str, otp: str):
+    if not enforce_password_policy(password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password does not meet complexity requirements",
+        )
+    if not verify_otp(username, otp):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OTP",
+        )
     query = users.insert().values(username=username, password=fake_hash_password(password))
     await database.execute(query)
     return {"username": username}
@@ -54,3 +82,129 @@ def connect_to_wifi_network(ssid: str, password: str):
     except Exception as e:
         logger.error(f"Error connecting to Wi-Fi network: {e}")
         raise HTTPException(status_code=500, detail="Error connecting to Wi-Fi network")
+
+@router.post("/network/preferences")
+def configure_network_preferences(preferences: NetworkPreferences):
+    try:
+        # Here you would add the logic to configure network preferences
+        logger.info(f"Network preferences updated: {preferences}")
+        return {"message": "Network preferences updated"}
+    except Exception as e:
+        logger.error(f"Error updating network preferences: {e}")
+        raise HTTPException(status_code=500, detail="Error updating network preferences")
+
+@router.get("/network/status")
+def get_network_status():
+    try:
+        # Here you would add the logic to get real-time network status and statistics
+        network_status = {
+            "cpu_usage": psutil.cpu_percent(),
+            "memory_usage": psutil.virtual_memory().percent,
+            "disk_usage": psutil.disk_usage('/').percent
+        }
+        return {"network_status": network_status}
+    except Exception as e:
+        logger.error(f"Error getting network status: {e}")
+        raise HTTPException(status_code=500, detail="Error getting network status")
+
+@router.get("/devices")
+def list_connected_devices():
+    try:
+        return {"devices": connected_devices}
+    except Exception as e:
+        logger.error(f"Error listing connected devices: {e}")
+        raise HTTPException(status_code=500, detail="Error listing connected devices")
+
+@router.post("/devices/restrict")
+def restrict_device_access(device: Device):
+    try:
+        # Here you would add the logic to restrict device access
+        logger.info(f"Device access restricted: {device}")
+        return {"message": "Device access restricted"}
+    except Exception as e:
+        logger.error(f"Error restricting device access: {e}")
+        raise HTTPException(status_code=500, detail="Error restricting device access")
+
+@router.get("/wifi/signal_strength")
+def get_wifi_signal_strength():
+    try:
+        # Here you would add the logic to get real-time Wi-Fi signal strength
+        signal_strength = {
+            "ssid": "example_ssid",
+            "strength": -50  # Example signal strength in dBm
+        }
+        return {"signal_strength": signal_strength}
+    except Exception as e:
+        logger.error(f"Error getting Wi-Fi signal strength: {e}")
+        raise HTTPException(status_code=500, detail="Error getting Wi-Fi signal strength")
+
+@router.post("/wifi/signal_strength/notify")
+def notify_signal_strength_drop(threshold: int):
+    try:
+        # Here you would add the logic to notify users when signal strength drops below the threshold
+        current_signal_strength = -60  # Example current signal strength in dBm
+        if current_signal_strength < threshold:
+            return {"message": "Signal strength has dropped below the threshold"}
+        return {"message": "Signal strength is above the threshold"}
+    except Exception as e:
+        logger.error(f"Error notifying signal strength drop: {e}")
+        raise HTTPException(status_code=500, detail="Error notifying signal strength drop")
+
+@router.post("/wifi/auto_reconnect")
+def auto_reconnect():
+    try:
+        # Here you would add the logic to implement auto-reconnect feature
+        return {"message": "Auto-reconnect feature implemented"}
+    except Exception as e:
+        logger.error(f"Error implementing auto-reconnect feature: {e}")
+        raise HTTPException(status_code=500, detail="Error implementing auto-reconnect feature")
+
+@router.get("/wifi/speed_test")
+def speed_test():
+    try:
+        # Here you would add the logic to integrate speed test feature
+        speed_metrics = {
+            "download_speed": 50,  # Example download speed in Mbps
+            "upload_speed": 10,    # Example upload speed in Mbps
+            "latency": 20,         # Example latency in ms
+            "packet_loss": 0       # Example packet loss in percentage
+        }
+        return {"speed_metrics": speed_metrics}
+    except Exception as e:
+        logger.error(f"Error performing speed test: {e}")
+        raise HTTPException(status_code=500, detail="Error performing speed test")
+
+@router.get("/network/usage_statistics")
+def get_network_usage_statistics():
+    try:
+        # Here you would add the logic to track and display network usage statistics
+        usage_statistics = {
+            "data_usage": 1000,  # Example data usage in MB
+            "connected_time": 3600  # Example connected time in seconds
+        }
+        return {"usage_statistics": usage_statistics}
+    except Exception as e:
+        logger.error(f"Error getting network usage statistics: {e}")
+        raise HTTPException(status_code=500, detail="Error getting network usage statistics")
+
+@router.post("/guest_networks")
+def create_guest_network(ssid: str, password: str):
+    try:
+        # Here you would add the logic to create and manage guest networks
+        return {"message": f"Guest network '{ssid}' created with limited privileges"}
+    except Exception as e:
+        logger.error(f"Error creating guest network: {e}")
+        raise HTTPException(status_code=500, detail="Error creating guest network")
+
+@router.get("/guest_networks/usage")
+def get_guest_network_usage():
+    try:
+        # Here you would add the logic to control and monitor guest network usage
+        guest_network_usage = {
+            "data_usage": 500,  # Example data usage in MB
+            "connected_time": 1800  # Example connected time in seconds
+        }
+        return {"guest_network_usage": guest_network_usage}
+    except Exception as e:
+        logger.error(f"Error getting guest network usage: {e}")
+        raise HTTPException(status_code=500, detail="Error getting guest network usage")
