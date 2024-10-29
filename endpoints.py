@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 from .main import app, database
 from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account
 from app.wifi import scan_wifi, connect_to_wifi
+from .update_website import WebsiteUpdateRequest, current_website
 
 router = APIRouter()
 
@@ -208,3 +209,16 @@ def get_guest_network_usage():
     except Exception as e:
         logger.error(f"Error getting guest network usage: {e}")
         raise HTTPException(status_code=500, detail="Error getting guest network usage")
+
+@router.put("/update_website/")
+async def update_website(request: WebsiteUpdateRequest):
+    if not request.new_url:
+        raise HTTPException(status_code=400, detail="New URL must be provided")
+    current_website["url"] = request.new_url
+    return {"message": "Website URL updated successfully", "new_url": current_website["url"]}
+
+@router.get("/current_website/")
+async def get_current_website():
+    return {"current_url": current_website["url"]}
+
+app.include_router(router)
