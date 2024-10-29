@@ -21,3 +21,31 @@
    ```bash
    git clone https://github.com/akaday/py-sky-wifi.git
    cd py-sky-wifi
+   ```
+
+## Endpoints
+
+### User Authentication
+- **POST /token**: Authenticate user and return access token.
+- **POST /users/**: Create a new user with OTP verification.
+
+### WiFi Management
+- **GET /wifi/scan**: Scan for available WiFi networks.
+- **POST /wifi/connect**: Connect to a WiFi network.
+- **GET /wifi/signal_strength**: Get the signal strength of the current WiFi network.
+- **POST /wifi/signal_strength/notify**: Notify when WiFi signal strength drops below a threshold.
+- **POST /wifi/auto_reconnect**: Enable auto-reconnect feature for WiFi.
+- **GET /wifi/speed_test**: Perform a speed test on the current WiFi network.
+
+### Network Preferences
+- **POST /network/preferences**: Configure network preferences.
+- **GET /network/status**: Get the current network status.
+- **GET /network/usage_statistics**: Get network usage statistics.
+
+### Device Management
+- **GET /devices**: List all connected devices.
+- **POST /devices/restrict**: Restrict access for a specific device.
+
+### Guest Networks
+- **POST /guest_networks**: Create a guest network with limited privileges.
+- **GET /guest_networks/usage**: Get usage statistics for the guest network.
