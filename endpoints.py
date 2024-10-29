@@ -5,7 +5,7 @@ import psutil
 from pydantic import BaseModel, ValidationError
 
 from .main import app, database
-from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account
+from .auth import User, fake_users_db, fake_hash_password, authenticate_user, enforce_password_policy, generate_otp, verify_otp, track_failed_login_attempts, lock_account, unlock_account, register_user
 from app.wifi import scan_wifi, connect_to_wifi
 from .update_website import WebsiteUpdateRequest, current_website
 
@@ -50,18 +50,11 @@ def read_root():
 
 @router.post("/users/")
 async def create_user(username: str, password: str, otp: str):
-    if not enforce_password_policy(password):
+    if not register_user(username, password, otp):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet complexity requirements",
+            detail="User registration failed",
         )
-    if not verify_otp(username, otp):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP",
-        )
-    query = users.insert().values(username=username, password=fake_hash_password(password))
-    await database.execute(query)
     return {"username": username}
 
 @router.get("/wifi/scan")
