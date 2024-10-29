@@ -49,3 +49,17 @@
 ### Guest Networks
 - **POST /guest_networks**: Create a guest network with limited privileges.
 - **GET /guest_networks/usage**: Get usage statistics for the guest network.
+
+## User Registration and Authentication
+
+### User Registration
+To register a new user, follow these steps:
+1. Generate an OTP for the user by calling the `generate_otp` function.
+2. Send the OTP to the user via email or SMS.
+3. Call the `register_user` function with the username, password, and OTP to complete the registration process.
+
+### User Authentication
+To authenticate a user, follow these steps:
+1. Call the `authenticate_user` function with the username and password.
+2. If the authentication is successful, an access token will be returned.
+3. Use the access token to access protected endpoints.

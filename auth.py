@@ -64,3 +64,20 @@ def is_account_locked(username: str) -> bool:
         unlock_account(username)
         return False
     return True
+
+def register_user(username: str, password: str, otp: str) -> bool:
+    if not enforce_password_policy(password):
+        return False
+    if not verify_otp(username, otp):
+        return False
+    # Add user to the database (this is a placeholder, replace with actual database code)
+    fake_users_db[username] = {"username": username, "password": fake_hash_password(password)}
+    return True
+
+def authenticate_user(username: str, password: str) -> bool:
+    if username not in fake_users_db:
+        return False
+    user = fake_users_db[username]
+    if not fake_hash_password(password) == user["password"]:
+        return False
+    return True
