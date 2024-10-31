@@ -1,4 +1,9 @@
 # PySkyWiFi
+## Support
+
+If you find this project helpful, consider buying me a coffee! Your support is greatly appreciated.
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Donate-Buy%20Me%20a%20Coffee-yellow)](https://paypal.me/barki0)
 
 ## Overview
 **PySkyWiFi** is a WiFi login system for airline websites using Python and FastAPI. This system provides secure login, session management, and user registration.
